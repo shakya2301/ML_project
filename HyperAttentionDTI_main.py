@@ -64,15 +64,31 @@ def test_process(model, pbar, LOSS):
             S.extend(predicted_scores)
             test_losses.append(loss.item())
 
+    # Calculate metrics
+    accuracy = accuracy_score(Y, P)
+    # Use zero_division parameter to avoid warning
+    precision = precision_score(Y, P, zero_division=0)
+    recall = recall_score(Y, P)
+    auc_score = roc_auc_score(Y, S)
+
+    # Get precision-recall values and ensure they are sorted
+    precision_values, recall_values, _ = precision_recall_curve(Y, S)
+    sorted_indices = np.argsort(recall_values)
+    sorted_precision = precision_values[sorted_indices]
+    sorted_recall = recall_values[sorted_indices]
+
+    # Calculate AUC for the precision-recall curve
+    prc_auc = auc(sorted_recall, sorted_precision)
+
     return {
         "Y": Y,
         "P": P,
         "loss": np.average(test_losses),
-        "Accuracy": accuracy_score(Y, P),
-        "Precision": precision_score(Y, P),
-        "Recall": recall_score(Y, P),
-        "AUC": roc_auc_score(Y, S),
-        "PRC": auc(*precision_recall_curve(Y, S)[:2])
+        "Accuracy": accuracy,
+        "Precision": precision,
+        "Recall": recall,
+        "AUC": auc_score,
+        "PRC": prc_auc
     }
 
 def test_model(model, dataset_load, save_path, DATASET, LOSS, dataset="Train", label="best", save=True):
